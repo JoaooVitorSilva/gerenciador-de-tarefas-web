@@ -4,7 +4,7 @@ import Tarefa from './Tarefa.jsx';
 function App() {
   const [tarefas, setTarefas] = useState([]);
   const [novaTarefa, setNovaTarefa] = useState('');
-
+  const [categoria, setCategoria] = useState('Estudo');
 
   function adicionarTarefa(event) {
     event.preventDefault();
@@ -18,7 +18,8 @@ function App() {
     const novaTarefaObj = {
       id: Date.now(),
       descricao: tituloLimpo,
-      concluida: false
+      concluida: false,
+      categoria: categoria
     };
     setTarefas([...tarefas, novaTarefaObj]);
     setNovaTarefa('');
@@ -57,7 +58,11 @@ function App() {
         value={novaTarefa}
         onChange={(e) => setNovaTarefa(e.target.value)} 
         placeholder="Descrição da tarefa" />
-
+        <select value ={categoria} onChange={(evento) => setCategoria(evento.target.value)}>
+          <option value="Estudo">Estudo</option>
+          <option value="Casa">Casa</option>
+          <option value="Trabalho">Trabalho</option>
+        </select>
         <button type="submit">Adicionar</button>
       </form>
 

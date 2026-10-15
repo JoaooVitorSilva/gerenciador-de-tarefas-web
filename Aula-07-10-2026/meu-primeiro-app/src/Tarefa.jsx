@@ -9,6 +9,7 @@ function Tarefa({ tarefa, onAlternar, onRemover }) {
       <span style={{ textDecoration: tarefa.concluida ? 'line-through' : 'none' }}>
         {tarefa.descricao}
       </span>
+      <small> [{tarefa.categoria}] </small>
       <button type="button" onClick={() => onRemover(tarefa.id)}>
         Remover
       </button>
