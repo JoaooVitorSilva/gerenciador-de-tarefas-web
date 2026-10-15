@@ -13,7 +13,7 @@ API REST para gerenciamento de tarefas com autenticação, persistência em SQLi
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-**Estudante:** Thiago Borsatto Dutra
+**Estudante:** João Vitor da Silva
 
 [Objetivo](#objetivo) •
 [Como rodar](#como-rodar) •
