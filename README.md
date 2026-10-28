@@ -155,45 +155,9 @@ gerenciador-de-tarefas/
 └── tsconfig.json
 ```
 
-### Banco de dados
-
-```mermaid
-erDiagram
-    TAREFAS {
-        INTEGER id PK
-        TEXT titulo
-        TEXT status "pending | completed"
-        TEXT prioridade "low | medium | high"
-        INTEGER usuario_id FK
-    }
-    USUARIOS {
-        INTEGER id PK
-        TEXT email UK
-        TEXT senha "hash bcrypt"
-    }
-    USUARIOS ||--o{ TAREFAS : "possui"
-```
-
 ---
 
 ## Diário de aulas
-
-```mermaid
-timeline
-    title Evolução do projeto
-    05/08 : Tailwind CSS
-          : Desafio de estilização
-    12/08 : Back-end com Express
-          : Primeiras rotas
-    19/08 : SQLite
-          : Tabelas de tarefas e usuários
-    26/08 : PUT, PATCH e novo DELETE
-    09/09 : Sanitização do código
-    16/09 : Segurança das rotas de escrita
-    23/09 : Registro e login (bcrypt + JWT)
-    30/09 : Rotas protegidas com JWT
-          : Isolamento de usuários
-```
 
 <details>
 <summary><b>05/08/2026 — Aulas 3 e 4: Tailwind CSS</b></summary>
@@ -356,6 +320,6 @@ Referência: [documentação do Tailwind](https://tailwindcss.com/docs/backgroun
 
 <div align="center">
 
-Feito por **Thiago Borsatto Dutra**
+Feito por **João Vitor da Silva**
 
 </div>
