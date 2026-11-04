@@ -4,12 +4,13 @@
 
 **Disciplina de Desenvolvimento de Sistemas Web**
 
-API REST para gerenciamento de tarefas com autenticação, persistência em SQLite e front-end estilizado com Tailwind CSS.
+API REST para gerenciamento de tarefas com autenticação, banco de dados em nuvem (Turso / libSQL) e front-end estilizado com Tailwind CSS.
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Express](https://img.shields.io/badge/Express_5-000000?style=for-the-badge&logo=express&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![Turso](https://img.shields.io/badge/Turso_libSQL-4FF8D2?style=for-the-badge&logo=turso&logoColor=black)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
@@ -28,7 +29,7 @@ API REST para gerenciamento de tarefas com autenticação, persistência em SQLi
 
 ## Objetivo
 
-Desenvolver um **gerenciador de tarefas completo e multi-usuário**, persistindo os dados em **SQLite**, aplicando boas práticas de segurança: validação de entradas, consultas parametrizadas, tratamento de erros sem vazamento de informações e autenticação com **bcrypt + JWT**.
+Desenvolver um **gerenciador de tarefas completo e multi-usuário**, persistindo os dados em **SQLite na nuvem (Turso)** para sobreviver aos discos efêmeros dos servidores de deploy, aplicando boas práticas de segurança: validação de entradas, consultas parametrizadas, tratamento de erros sem vazamento de informações e autenticação com **bcrypt + JWT**.
 
 ## Funcionalidades
 
@@ -37,11 +38,14 @@ Desenvolver um **gerenciador de tarefas completo e multi-usuário**, persistindo
 | ▸ | **CRUD de tarefas** | Criar, listar, buscar, atualizar (total e parcial) e excluir tarefas |
 | ▸ | **Busca por título** | `GET /api/tasks?search=termo` com proteção contra SQL Injection |
 | ▸ | **Validação centralizada** | Helpers (`tituloValido`, `normalizarPrioridade`, `parsearId`...) reutilizados por todas as rotas |
-| ▸ | **Registro e login** | Senhas guardadas como hash (bcrypt) e login que devolve um token JWT válido por 2h |
+| ▸ | **Registro e login** | Senhas guardadas como hash (bcrypt) e login que devolve um token JWT válido por 8h |
 | ▸ | **Rotas protegidas** | Todas as rotas de tarefas exigem o token JWT (middleware `authenticate`) |
 | ▸ | **Isolamento de usuários** | Cada usuário só vê e altera as próprias tarefas (`usuario_id`) |
-| ▸ | **PATCH atômico** | Atualizações parciais dentro de uma transação do SQLite |
-| ▸ | **Erros padronizados** | `400` validação · `401` credenciais/token · `404` não encontrado · `409` conflito · `500` erro interno genérico |
+| ▸ | **Banco em nuvem** | `@libsql/client` conecta no Turso quando há credenciais no `.env`; sem elas, usa o arquivo local `tarefas.db` |
+| ▸ | **Banner de inicialização** | O terminal mostra se o banco está na nuvem ou local, sem nunca imprimir o token |
+| ▸ | **Health check real** | `/api/health` executa `SELECT 1` no banco e responde `503` se ele não responder |
+| ▸ | **Proteção contra BOM** | Avisa no terminal quando o `.env` foi salvo em *UTF-8 with BOM* (armadilha do Windows) |
+| ▸ | **Erros padronizados** | `400` validação · `401` credenciais/token · `404` não encontrado · `409` conflito · `500` erro interno genérico · `503` banco indisponível |
 
 ---
 
@@ -49,20 +53,52 @@ Desenvolver um **gerenciador de tarefas completo e multi-usuário**, persistindo
 
 ### Pré-requisitos
 
-- [Node.js](https://nodejs.org/) instalado
+- [Node.js](https://nodejs.org/) **20.12 ou superior** (por causa do `process.loadEnvFile`)
+- Conta gratuita no [Turso](https://turso.tech) (opcional: sem ela o projeto roda com banco local)
 - Extensão [REST Client](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) no VS Code (para os testes)
 
 ### Passo a passo
 
 ```bash
-# 1. Instale as dependências (rode na pasta onde está o package.json!)
+# 1. Clone o repositório
+git clone https://github.com/JoaooVitorSilva/gerenciador-de-tarefas-web.git
+cd gerenciador-de-tarefas-web
+
+# 2. Instale as dependências (rode na pasta onde está o package.json!)
 npm install
 
-# 2. Suba o servidor em modo desenvolvimento (reinicia ao salvar)
+# 3. Crie o .env a partir do modelo e preencha com as credenciais do Turso
+copy .env.example .env      # Windows (no Linux/macOS: cp .env.example .env)
+
+# 4. Suba o servidor em modo desenvolvimento (reinicia ao salvar)
 npm run dev
 ```
 
-O servidor sobe em **http://localhost:3000** e o banco `tarefas.db` é criado automaticamente.
+O servidor sobe em **http://localhost:3000** e as tabelas e o usuário `admin@senai.com` (senha `senha_super_secreta_123`) são criados automaticamente.
+
+O banner no terminal mostra onde os dados estão sendo salvos:
+
+```text
+============================================================
+  Banco de dados
+------------------------------------------------------------
+  Modo  : Turso / libSQL (nuvem)
+  Onde  : libsql://seu-banco.turso.io
+  Token : presente (nunca será mostrado)
+============================================================
+```
+
+Sem `.env`, o modo exibido é `arquivo local (SQLite)` e os dados vão para `tarefas.db`.
+
+### Configurando o Turso
+
+1. Entre em [turso.tech](https://turso.tech) com a conta do GitHub e clique em **Create Database**.
+2. Copie a **Database URL** (`libsql://...turso.io`, **sem barra no final**).
+3. Clique em **Create Token** (leitura e escrita) e copie o token **inteiro** com o botão de copiar.
+4. Cole os dois valores no `.env` e salve em **UTF-8** (no VS Code, confira o rodapé: não pode ser *UTF-8 with BOM*).
+
+> [!WARNING]
+> O `.env` e o `tarefas.db` estão no `.gitignore` e **nunca** devem ir para o GitHub. Só o `.env.example` é versionado.
 
 ### Scripts disponíveis
 
@@ -76,6 +112,8 @@ O servidor sobe em **http://localhost:3000** e o banco `tarefas.db` é criado au
 
 | Variável | Padrão | Descrição |
 |---|---|---|
+| `TURSO_URL` | — | URL do banco no Turso (`libsql://...`). Sem ela, usa o arquivo local |
+| `TURSO_TOKEN` | — | Token de acesso ao banco no Turso |
 | `PORT` | `3000` | Porta do servidor |
 | `JWT_SECRET` | `super_secreto_desenvolvimento` | Chave de assinatura dos tokens — **troque em produção!** |
 
@@ -87,16 +125,19 @@ O servidor sobe em **http://localhost:3000** e o banco `tarefas.db` é criado au
 
 | Método | Rota | Descrição |
 |:-:|---|---|
-| ![GET](https://img.shields.io/badge/GET-2ea44f?style=flat-square) | `/` | Rota de *fallback* |
-| ![GET](https://img.shields.io/badge/GET-2ea44f?style=flat-square) | `/api/health` | Verifica se o servidor está ativo |
+| ![GET](https://img.shields.io/badge/GET-2ea44f?style=flat-square) | `/` | Entrega o front-end (`web/dist`) ou avisa que o build não existe |
+| ![GET](https://img.shields.io/badge/GET-2ea44f?style=flat-square) | `/api/health` | Verifica servidor **e banco** (`SELECT 1`); responde `503` se o banco não responder |
 | ![GET](https://img.shields.io/badge/GET-2ea44f?style=flat-square) | `/api/version` | Nome e versão do sistema |
 
 ### Autenticação
 
 | Método | Rota | Corpo | Respostas |
 |:-:|---|---|---|
-| ![POST](https://img.shields.io/badge/POST-0969da?style=flat-square) | `/api/auth/register` | `{ "email", "senha" }` | `201` · `400` · `409` |
-| ![POST](https://img.shields.io/badge/POST-0969da?style=flat-square) | `/api/auth/login` | `{ "email", "senha" }` | `200 { token }` · `400` · `401` |
+| ![POST](https://img.shields.io/badge/POST-0969da?style=flat-square) | `/api/auth/register` | `{ "email", "senha" }` | `201` · `400` · `409` · `500` |
+| ![POST](https://img.shields.io/badge/POST-0969da?style=flat-square) | `/api/auth/login` | `{ "email", "senha" }` | `200 { token }` · `400` · `401` · `500` |
+
+> [!NOTE]
+> O campo da senha pode ser enviado como `senha` (usado pelo front) ou `password` (usado no `request.http`).
 
 ### Tarefas
 
@@ -117,10 +158,11 @@ O servidor sobe em **http://localhost:3000** e o banco `tarefas.db` é criado au
 > - `prioridade`: `low` · `medium` · `high` (padrão: `medium`)
 > - `status`: `pending` · `completed` (padrão: `pending`)
 > - `senha`: **pelo menos 6 caracteres**
+> - `email`: precisa conter `@`
 
 ### Testando com o REST Client
 
-Todos os cenários de teste estão em [`requests.http`](requests.http). Para usar:
+Os testes da Aula 09 estão em [`request.http`](request.http) e os cenários das aulas anteriores em [`requests.http`](requests.http). Para usar:
 
 1. Crie um arquivo com extensão **`.http`** ou **`.rest`**
 2. Separe cada requisição com **`###`** — sem isso o REST Client não reconhece as requisições
@@ -142,9 +184,12 @@ GET {{baseUrl}}/api/tasks
 
 ```text
 gerenciador-de-tarefas/
+├── Aula-07-10-2026/        # Primeiro app React (Vite)
 ├── Semanario/              # Registros semanais de aprendizado
-├── server.ts               # API Express + SQLite + autenticação
-├── requests.http           # Cenários de teste (REST Client)
+├── server.ts               # API Express + Turso/libSQL + autenticação
+├── request.http            # Testes da Aula 09 (REST Client)
+├── requests.http           # Cenários de teste das aulas anteriores
+├── .env.example            # Modelo das variáveis do Turso (copie para .env)
 ├── index.html              # Front-end do gerenciador de tarefas
 ├── index.txt               # Código original da aula 1 (backup)
 ├── tailwindCSS.html        # Estudo das classes básicas do Tailwind
@@ -196,6 +241,18 @@ gerenciador-de-tarefas/
 
 </details>
 
+<details>
+<summary><b>04/11/2026 — Aula 09: Banco de dados em nuvem (Turso / libSQL)</b></summary>
+
+- Troca do `better-sqlite3` pelo `@libsql/client`, que fala com o Turso via HTTP e mantém o arquivo local como *fallback*.
+- **`.env`** com `TURSO_URL` e `TURSO_TOKEN`, carregado por `carregarEnv()` com detecção de BOM.
+- Banner no terminal mostrando o modo do banco e o *health check* testando o banco de verdade.
+- Criação das tabelas com `db.batch([...], "write")`, porque um único `execute()` ignora o segundo comando.
+- Todas as consultas viraram assíncronas (`await db.execute({ sql, args })`) e o servidor só sobe depois de `await inicializarBanco()`.
+- Tabelas atualizadas: `senha_hash`, `criado_em`, `descricao` e `atualizado_em`.
+
+</details>
+
 ---
 
 ## Semanário
@@ -209,6 +266,8 @@ Reflexões semanais sobre o que foi aprendido, as dificuldades e como foram reso
 | 16/09 | 05 | Segurança das rotas de escrita | [abrir →](Semanario/16%20de%20setembro%20de%202026.md) |
 | 23/09 | 06 | Autenticação (registro e login) | [abrir →](Semanario/23%20de%20setembro%20de%202026.md) |
 | 30/09 | 07 | Rotas protegidas e isolamento de usuários | [abrir →](Semanario/30%20de%20setembro%20de%202026.md) |
+| 07/10 | 06 | Introdução ao React (componentes) | [abrir →](Semanario/07%20de%20outubro%20de%202026.md) |
+| 04/11 | 09 | Banco de dados em nuvem (Turso / libSQL) | [abrir →](Semanario/04%20de%20novembro%20de%202026.md) |
 
 <details>
 <summary><b>02/09 — Ambiente e primeiros passos</b></summary>
@@ -298,6 +357,35 @@ import express, { type Request, type Response, type NextFunction } from "express
 **» Observação** — Testei com dois usuários: um não consegue ver, editar nem apagar a tarefa do outro, e sem token a resposta é sempre `401`.
 
 [Ler o registro completo →](Semanario/30%20de%20setembro%20de%202026.md)
+
+</details>
+
+<details>
+<summary><b>07/10 — Introdução ao React</b></summary>
+
+**» O que aprendi** — Como funciona a componentização no React, que o `App` precisa retornar um único elemento raiz e como exportar componentes para usá-los em outros arquivos.
+
+**» Dificuldade** — Nenhuma por enquanto, o conteúdo foi bem explicado.
+
+**» Observação** — Um mesmo componente de botão executando três ações diferentes mostrou bem como componentes podem ser reaproveitados.
+
+[Ler o registro completo →](Semanario/07%20de%20outubro%20de%202026.md)
+
+</details>
+
+<details>
+<summary><b>04/11 — Banco de dados em nuvem (Turso / libSQL)</b></summary>
+
+**» O que aprendi**
+- **Disco efêmero**: na nuvem o contêiner é recriado a cada deploy e o `tarefas.db` some. Por isso o banco foi para o Turso.
+- **Síncrono × assíncrono**: as consultas viraram `await db.execute(...)`; `changes` virou `rowsAffected` e `lastInsertRowid` precisa de `Number(...)`.
+- **`db.batch()`**: executa vários comandos de forma atômica, enquanto um único `execute()` ignora o segundo em silêncio.
+
+**» Dificuldade** — O guia dizia que o cadastro usa `password`, mas o TODO e o front usam `senha`.
+
+**» Solução** — O servidor passou a aceitar os dois nomes. Também era preciso reiniciar o `npm run dev` depois de criar o `.env`, porque ele só é lido na inicialização.
+
+[Ler o registro completo →](Semanario/04%20de%20novembro%20de%202026.md)
 
 </details>
 
