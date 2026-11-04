@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:3000
+
+# ============================================================================
+# request.http — Testes da API do Gerenciador de Tarefas (Aula 09)
+#
+# Como usar:
+#   1. Abra este arquivo no VS Code com a extensão "Rest Client" instalada.
+#   2. Clique em "Send Request" (ou Ctrl+Alt+R) acima de cada bloco.
+#   3. Após o login, copie o token da resposta e cole na variável @token abaixo.
+# ============================================================================
+
+@token = cole_aqui_o_token_retornado_pelo_login
+
+### 1. Health Check — verifica se o servidor e o banco estão no ar
+GET {{baseUrl}}/api/health
+
+### 2. Versão da aplicação
+GET {{baseUrl}}/api/version
+
+### 3. Cadastro de usuário (registro)
+### Não precisa de token. Se der 409, o e-mail já existe.
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "email": "aluno@senai.com",
+    "password": "senha123456"
+}
+
+### 4. Login — retorna o JWT
+### Após rodar, copie o valor de "token" da resposta e cole em @token acima.
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "aluno@senai.com",
+    "password": "senha123456"
+}
+
+### 5. Listar tarefas do usuário logado
+### Precisa de token válido no header Authorization.
+GET {{baseUrl}}/api/tasks?search=
+Authorization: Bearer {{token}}
+
+### 6. Criar uma nova tarefa
+POST {{baseUrl}}/api/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "titulo": "Estudar para a prova de banco de dados",
+    "prioridade": "high"
+}
+
+### 7. Atualizar tarefa completa (PUT)
+### Substitua {id} pelo ID da tarefa criada no passo 6.
+PUT {{baseUrl}}/api/tasks/{id}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "titulo": "Estudar para a prova de banco de dados (atualizado)",
+    "prioridade": "medium",
+    "status": "completed"
+}
+
+### 8. Atualizar tarefa parcialmente (PATCH)
+### Substitua {id} pelo ID da tarefa.
+PATCH {{baseUrl}}/api/tasks/{id}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "status": "pending"
+}
+
+### 9. Deletar uma tarefa
+### Substitua {id} pelo ID da tarefa.
+DELETE {{baseUrl}}/api/tasks/{id}
+Authorization: Bearer {{token}}
