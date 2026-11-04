@@ -54,7 +54,7 @@ Authorization: Bearer {{token}}
 
 ### 7. Atualizar tarefa completa (PUT)
 ### Substitua {id} pelo ID da tarefa criada no passo 6.
-PUT {{baseUrl}}/api/tasks/{id}
+PUT {{baseUrl}}/api/tasks/3
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -66,7 +66,7 @@ Authorization: Bearer {{token}}
 
 ### 8. Atualizar tarefa parcialmente (PATCH)
 ### Substitua {id} pelo ID da tarefa.
-PATCH {{baseUrl}}/api/tasks/{id}
+PATCH {{baseUrl}}/api/tasks/3
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -76,5 +76,5 @@ Authorization: Bearer {{token}}
 
 ### 9. Deletar uma tarefa
 ### Substitua {id} pelo ID da tarefa.
-DELETE {{baseUrl}}/api/tasks/{id}
+DELETE {{baseUrl}}/api/tasks/3
 Authorization: Bearer {{token}}
