@@ -144,3 +144,9 @@ vite.config.ts.timestamp-*
 
 # database
 *.db
+tarefas.db-journal
+*.db-wal
+*.db-shm
+
+# Build do front (gerado por `npm run build:web`, nunca versionado)
+web/dist/

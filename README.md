@@ -4,10 +4,12 @@
 
 **Disciplina de Desenvolvimento de Sistemas Web**
 
-API REST para gerenciamento de tarefas com autenticação, banco de dados em nuvem (Turso / libSQL) e front-end estilizado com Tailwind CSS.
+API REST para gerenciamento de tarefas com autenticação, banco de dados em nuvem (Turso / libSQL) e front-end em React + TypeScript estilizado com Tailwind CSS.
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Express](https://img.shields.io/badge/Express_5-000000?style=for-the-badge&logo=express&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![Turso](https://img.shields.io/badge/Turso_libSQL-4FF8D2?style=for-the-badge&logo=turso&logoColor=black)
@@ -72,7 +74,14 @@ copy .env.example .env      # Windows (no Linux/macOS: cp .env.example .env)
 
 # 4. Suba o servidor em modo desenvolvimento (reinicia ao salvar)
 npm run dev
+
+# 5. Em OUTRO terminal, instale e suba o front React (pasta web/)
+cd web
+npm install
+npm run dev
 ```
+
+O front abre em **http://localhost:5173** e conversa com a API em **http://localhost:3000**. O guia completo (incluindo build de produção) está em [`COMO_RODAR.md`](COMO_RODAR.md).
 
 O servidor sobe em **http://localhost:3000** e as tabelas e o usuário `admin@senai.com` (senha `senha_super_secreta_123`) são criados automaticamente.
 
@@ -105,8 +114,10 @@ Sem `.env`, o modo exibido é `arquivo local (SQLite)` e os dados vão para `tar
 | Comando | O que faz |
 |---|---|
 | `npm run dev` | Inicia o servidor com *hot reload* (`tsx watch`) |
-| `npm start` | Inicia o servidor sem *watch* |
-| `npm run build` | Checagem de tipos com o TypeScript (`tsc`) |
+| `npm start` | Inicia o servidor sem *watch* (entrega também o front de `web/dist`) |
+| `npm run build` | Build completo: instala e compila o front (`web/dist`) e checa os tipos do back |
+| `npm run build:web` | Só o build do front (`tsc -b && vite build`) |
+| `npm run dev:web` | Só o front em desenvolvimento (Vite, porta 5173) |
 
 ### Variáveis de ambiente
 
@@ -185,6 +196,13 @@ GET {{baseUrl}}/api/tasks
 ```text
 gerenciador-de-tarefas/
 ├── Aula-07-10-2026/        # Primeiro app React (Vite)
+├── Atividade-18-11-2026/   # Leitura, análise e evolução do front (respostas)
+├── web/                    # Front-end React + Vite + TypeScript + Tailwind
+│   └── src/
+│       ├── App.tsx         # Decide entre Login e Tarefas (dono do estado usuario)
+│       ├── api.ts          # Todas as chamadas HTTP + token JWT
+│       ├── Login.tsx       # Login e cadastro
+│       └── Tarefas.tsx     # Lista, busca com debounce e filtro por prioridade
 ├── Semanario/              # Registros semanais de aprendizado
 ├── server.ts               # API Express + Turso/libSQL + autenticação
 ├── request.http            # Testes da Aula 09 (REST Client)
@@ -196,6 +214,7 @@ gerenciador-de-tarefas/
 ├── Desafio_aulas_3e4.html  # Desafio de estilização com Tailwind
 ├── tailwind.config.js      # Configuração do Tailwind
 ├── Dicas e Truques.txt     # Anotações rápidas (CSS → Tailwind)
+├── COMO_RODAR.md           # Guia de execução (dev e produção)
 ├── package.json
 └── tsconfig.json
 ```
@@ -250,6 +269,19 @@ gerenciador-de-tarefas/
 - Criação das tabelas com `db.batch([...], "write")`, porque um único `execute()` ignora o segundo comando.
 - Todas as consultas viraram assíncronas (`await db.execute({ sql, args })`) e o servidor só sobe depois de `await inicializarBanco()`.
 - Tabelas atualizadas: `senha_hash`, `criado_em`, `descricao` e `atualizado_em`.
+
+</details>
+
+<details>
+<summary><b>18/11/2026 — Front-end React: leitura, análise e evolução</b></summary>
+
+- Pasta **`web/`** com o front em React + Vite + TypeScript + Tailwind: `App.tsx`, `api.ts`, `Login.tsx` e `Tarefas.tsx`.
+- O `server.ts` entrega o build (`web/dist`) em produção, com 404 em JSON para `/api` e *SPA fallback* para o resto.
+- **Questionário** sobre *lazy initializer*, derivação × estado, JWT decodificado × validado, `res.text()` × `res.json()`, CORS, debounce e `useRef`.
+- **Caça ao bug:** race condition no debounce, `await` esquecido e `JSON.parse("")` em resposta 204 (branch `bugs-inserted`).
+- **Feature nova:** chips de filtro por prioridade com `useMemo` (derivação, sem nova chamada à API).
+- Correção no back: `ALTER TABLE ... ADD COLUMN` não aceita `DEFAULT CURRENT_TIMESTAMP` no SQLite; o PATCH agora também atualiza `atualizado_em`.
+- Respostas completas em [`Atividade-18-11-2026/`](Atividade-18-11-2026/README.md).
 
 </details>
 

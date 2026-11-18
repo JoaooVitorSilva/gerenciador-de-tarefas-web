@@ -195,9 +195,16 @@ async function inicializarBanco(): Promise<void> {
 
         // Garante que a coluna atualizado_em existe (bancos criados pela Aula 08 não têm)
         try {
+            // O SQLite NÃO aceita ADD COLUMN com DEFAULT CURRENT_TIMESTAMP
+            // ("Cannot add a column with non-constant default"). Por isso a
+            // coluna entra sem DEFAULT e é preenchida logo em seguida.
             await db.execute({
-                sql: "ALTER TABLE tarefas ADD COLUMN atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP",
+                sql: "ALTER TABLE tarefas ADD COLUMN atualizado_em DATETIME",
             });
+            await db.execute({
+                sql: "UPDATE tarefas SET atualizado_em = CURRENT_TIMESTAMP WHERE atualizado_em IS NULL",
+            });
+            console.log("  Coluna atualizado_em adicionada e preenchida.");
         } catch (alterErro: any) {
             if (String(alterErro?.message).includes("duplicate column")) {
                 console.log("  Coluna atualizado_em já existe.");
@@ -519,6 +526,8 @@ app.patch("/api/tasks/:id", authenticate, async (req: AuthRequest, res) => {
         if (camposParaAtualizar.length === 0) {
             return res.status(200).json(tarefaExistente);
         }
+        // atualizado_em também muda no PATCH (o PUT já fazia isso)
+        camposParaAtualizar.push("atualizado_em = CURRENT_TIMESTAMP");
         const sql = `UPDATE tarefas SET ${camposParaAtualizar.join(", ")} WHERE id = ? AND usuario_id = ?`;
         valoresParaAtualizar.push(idParaAtualizar, usuarioId);
 
