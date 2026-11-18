@@ -123,14 +123,6 @@ export function getUsuario(): Usuario | null {
 async function tratarResposta<T>(res: Response): Promise<T> {
     const texto = await res.text();
 
-    // Corpo vazio: não há o que fazer JSON.parse (JSON.parse("") lança erro)
-    if (res.status === 204 || texto === "") {
-        if (!res.ok) {
-            throw new ErroApi(`Erro ${res.status} sem mensagem do servidor.`, res.status);
-        }
-        return undefined as T;
-    }
-
     let dados: unknown;
     try {
         dados = JSON.parse(texto);

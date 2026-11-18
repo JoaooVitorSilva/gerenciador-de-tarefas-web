@@ -79,9 +79,9 @@ export default function Tarefas({ usuario, onSair }: Props) {
         const termo = busca.trim();
         if (termo === buscaAplicada) return;
 
+        setCarregando(true);
         const timer = setTimeout(() => {
             setBuscaAplicada(termo);
-            setCarregando(true);
         }, ATRASO_BUSCA);
 
         // Cleanup: se a pessoa digitar de novo antes dos 400 ms, o timer
@@ -159,7 +159,7 @@ export default function Tarefas({ usuario, onSair }: Props) {
         try {
             // O await garante que só atualizamos a tela com a tarefa que o
             // banco realmente salvou (e que um erro cai no catch abaixo).
-            const atualizada = await atualizarTarefa(tarefa.id, { status: novoStatus });
+            const atualizada = atualizarTarefa(tarefa.id, { status: novoStatus });
             setTarefas((lista) => lista.map((t) => (t.id === tarefa.id ? atualizada : t)));
         } catch (err) {
             tratarErro(err);
