@@ -195,9 +195,16 @@ async function inicializarBanco(): Promise<void> {
 
         // Garante que a coluna atualizado_em existe (bancos criados pela Aula 08 não têm)
         try {
+            // O SQLite NÃO aceita ADD COLUMN com DEFAULT CURRENT_TIMESTAMP
+            // ("Cannot add a column with non-constant default"). Por isso a
+            // coluna entra sem DEFAULT e é preenchida logo em seguida.
             await db.execute({
-                sql: "ALTER TABLE tarefas ADD COLUMN atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP",
+                sql: "ALTER TABLE tarefas ADD COLUMN atualizado_em DATETIME",
             });
+            await db.execute({
+                sql: "UPDATE tarefas SET atualizado_em = CURRENT_TIMESTAMP WHERE atualizado_em IS NULL",
+            });
+            console.log("  Coluna atualizado_em adicionada e preenchida.");
         } catch (alterErro: any) {
             if (String(alterErro?.message).includes("duplicate column")) {
                 console.log("  Coluna atualizado_em já existe.");
@@ -325,6 +332,26 @@ app.get("/api/health", async (_req: Request, res: Response) => {
 // Versão da aplicação (usada no request.http)
 app.get("/api/version", (_req: Request, res: Response) => {
     res.json({ appName: "Gerenciador de Tarefas Multi-Usuários", version: "1.0.0" });
+});
+
+// TODO_10 (deploy no Render): confirma em produção que o banco responde,
+// quais tabelas existem e quantos registros cada uma tem.
+app.get("/api/db-check", async (_req: Request, res: Response) => {
+    try {
+        await db.execute("SELECT 1");
+        const { rows: tabelas } = await db.execute({
+            sql: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+        });
+        const contagem: Record<string, number> = {};
+        for (const t of tabelas) {
+            const nome = (t as any).name;
+            const { rows } = await db.execute({ sql: `SELECT COUNT(*) as total FROM ${nome}` });
+            contagem[nome] = Number((rows[0] as any).total);
+        }
+        return res.json({ ok: true, tabelas: tabelas.map((t) => (t as any).name), contagem });
+    } catch (erro: any) {
+        return res.status(503).json({ ok: false, erro: erro?.message || "Falha ao consultar banco" });
+    }
 });
 
 // Cadastro com 409 APENAS para conflito real de UNIQUE
@@ -519,6 +546,8 @@ app.patch("/api/tasks/:id", authenticate, async (req: AuthRequest, res) => {
         if (camposParaAtualizar.length === 0) {
             return res.status(200).json(tarefaExistente);
         }
+        // atualizado_em também muda no PATCH (o PUT já fazia isso)
+        camposParaAtualizar.push("atualizado_em = CURRENT_TIMESTAMP");
         const sql = `UPDATE tarefas SET ${camposParaAtualizar.join(", ")} WHERE id = ? AND usuario_id = ?`;
         valoresParaAtualizar.push(idParaAtualizar, usuarioId);
 
