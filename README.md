@@ -18,6 +18,8 @@ API REST para gerenciamento de tarefas com autenticação, banco de dados em nuv
 
 **Estudante:** João Vitor da Silva
 
+**🌐 Aplicação no ar:** [gerenciador-de-tarefas-web.onrender.com](https://gerenciador-de-tarefas-web.onrender.com)
+
 [Objetivo](#objetivo) •
 [Como rodar](#como-rodar) •
 [Endpoints](#endpoints-da-api) •
@@ -282,6 +284,16 @@ gerenciador-de-tarefas/
 - **Feature nova:** chips de filtro por prioridade com `useMemo` (derivação, sem nova chamada à API).
 - Correção no back: `ALTER TABLE ... ADD COLUMN` não aceita `DEFAULT CURRENT_TIMESTAMP` no SQLite; o PATCH agora também atualiza `atualizado_em`.
 - Respostas completas em [`Atividade-18-11-2026/`](Atividade-18-11-2026/README.md).
+
+</details>
+
+<details>
+<summary><b>TODO_10 — Deploy no Render</b></summary>
+
+- Script `build` da raiz passou a instalar e compilar o front (`npm --prefix web install && npm run build:web && tsc`).
+- Rota **`/api/db-check`**: confirma em produção que o banco responde, lista as tabelas e conta os registros.
+- **`render.yaml`** com `buildCommand`, `startCommand`, `healthCheckPath` e as variáveis `JWT_SECRET` (gerada), `TURSO_URL` e `TURSO_TOKEN`.
+- Deploy no Render (plano Free) conectado ao Turso: [gerenciador-de-tarefas-web.onrender.com](https://gerenciador-de-tarefas-web.onrender.com).
 
 </details>
 
